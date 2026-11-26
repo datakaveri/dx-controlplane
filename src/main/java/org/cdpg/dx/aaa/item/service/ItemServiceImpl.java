@@ -12,11 +12,9 @@ import static org.cdpg.dx.catalogueService.config.Constants.*;
 import static org.cdpg.dx.catalogueService.config.Constants.SHORT_DESCRIPTION;
 import static org.cdpg.dx.database.elastic.util.Constants.ACCESS_POLICY;
 import static org.cdpg.dx.database.elastic.util.Constants.APD_URL;
-import static org.cdpg.dx.database.elastic.util.Constants.COS_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.DETAIL_ITEM_NOT_FOUND;
 import static org.cdpg.dx.database.elastic.util.Constants.ID_KEYWORD;
 import static org.cdpg.dx.database.elastic.util.Constants.KEYWORD_KEY;
-import static org.cdpg.dx.database.elastic.util.Constants.ORG_ADMIN;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE;
 import static org.cdpg.dx.database.elastic.util.Constants.TYPE_KEYWORD;
 
@@ -39,6 +37,8 @@ import org.cdpg.dx.aaa.item.model.Item;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.item.util.ItemFactory;
 import org.cdpg.dx.aaa.item.util.PatchItemRequest;
+import org.cdpg.dx.aaa.shareAssets.dao.VisibilityDao;
+import org.cdpg.dx.aaa.shareAssets.dao.impl.VisibilityDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.AccessRequestDao;
 import org.cdpg.dx.acl.accessRequest.dao.impl.AccessRequestDaoImpl;
 import org.cdpg.dx.acl.accessRequest.dao.model.AccessRequestDto;
@@ -55,6 +55,7 @@ import org.cdpg.dx.catalogueService.models.Asset;
 import org.cdpg.dx.catalogueService.models.ItemType;
 import org.cdpg.dx.common.exception.*;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.database.elastic.model.BulkScriptUpdate;
 import org.cdpg.dx.database.elastic.model.BulkSyncResult;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
@@ -73,6 +74,7 @@ public class ItemServiceImpl implements ItemService {
   private final AccessRuleDao accessRuleDao;
   private final KeycloakUserService keycloakUserService;
   private final WebClient client;
+  private final VisibilityDao visibilityDao;
   ElasticsearchService elasticsearchService;
   QueryDecoder queryDecoder = new QueryDecoder();
 
@@ -85,6 +87,7 @@ public class ItemServiceImpl implements ItemService {
       String docIndex, String deletedDocsIndex,
       String apdURL) {
     this.accessRuleDao = new AccessRuleDaoImpl(postgresService);
+    this.visibilityDao = new VisibilityDaoImpl(postgresService);
     AccessRequestDao accessRequestDao =
         new AccessRequestDaoImpl(postgresService, REQUEST_TABLE, DB_REQUEST_ID, AccessRequestDto::new);
     this.elasticsearchService = elasticsearchService;
@@ -161,6 +164,10 @@ public class ItemServiceImpl implements ItemService {
           String ownerUserId = source.getString(PROVIDER_USER_ID);
           String itemOrgId = source.getString(ORGANIZATION_ID);
           if (accessPolicy.equalsIgnoreCase(PRIVATE)) {
+            if (request.isIncludeSharedAccess()) {
+              return getPrivateItemIncludingShares(
+                  ownerUserId, itemOrgId, request, elasticResponse, totalHits);
+            }
             return getResponseWhenResourceIsPrivate(
                 ownerUserId, itemOrgId, request, elasticResponse, totalHits);
           }
@@ -217,22 +224,14 @@ public class ItemServiceImpl implements ItemService {
     if (ownershipCheck(
         ownerUserId,
         request.getSubId(),
-        request.getRoles(),
+        request.getScopes(),
         itemOrganizationId,
         request.getOrganizationId())) {
 
       boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
-
-      boolean isCosAdmin =
-          request.getRoles() != null
-              && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
-
-      boolean isOrgAdmin =
-          request.getRoles() != null
-              && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN))
-              && Objects.equals(itemOrganizationId, request.getOrganizationId());
-
-      boolean isAdmin = isCosAdmin || isOrgAdmin;
+      boolean isAdmin =
+          AssetAccessScopes.isAssetAdminFor(
+              request.getScopes(), itemOrganizationId, request.getOrganizationId());
 
       setAccessFlags(response, isOwner, isAdmin);
 
@@ -243,26 +242,88 @@ public class ItemServiceImpl implements ItemService {
     }
   }
 
+  /**
+   * Read-only view of a PRIVATE item: owner and asset admins as in {@link
+   * #getResponseWhenResourceIsPrivate}, plus users the item is actively shared with, either
+   * directly (USER share) or through their organisation (ORGANIZATION share).
+   */
+  private Future<ResponseModel> getPrivateItemIncludingShares(
+      String ownerUserId,
+      String itemOrganizationId,
+      GetItemRequest request,
+      ElasticsearchResponse response,
+      int totalHits) {
+    String subId = request.getSubId();
+    if (subId == null
+        || subId.isEmpty()
+        || ownershipCheck(
+            ownerUserId,
+            subId,
+            request.getScopes(),
+            itemOrganizationId,
+            request.getOrganizationId())) {
+      // missing token -> 401, owner/admin -> 200 with access flags
+      return getResponseWhenResourceIsPrivate(
+          ownerUserId, itemOrganizationId, request, response, totalHits);
+    }
+
+    return isSharedWithCaller(request)
+        .compose(
+            shared -> {
+              if (!shared) {
+                LOGGER.warn(
+                    "PRIVATE item {} is neither owned by, administered by, nor shared with {}",
+                    request.getItemId(),
+                    subId);
+                return Future.failedFuture(
+                    new DxForbiddenException("User doesn't have access to this item"));
+              }
+              LOGGER.debug("PRIVATE item {} shared with {}", request.getItemId(), subId);
+              setAccessFlags(response, false, false);
+              return Future.succeededFuture(
+                  new ResponseModel(List.of(response), 1, 1, totalHits));
+            });
+  }
+
+  private Future<Boolean> isSharedWithCaller(GetItemRequest request) {
+    UUID itemId;
+    UUID userId;
+    try {
+      itemId = UUID.fromString(request.getItemId());
+      userId = UUID.fromString(request.getSubId());
+    } catch (IllegalArgumentException e) {
+      return Future.succeededFuture(false);
+    }
+
+    String orgId = request.getOrganizationId();
+    return visibilityDao
+        .hasActiveUserShare(itemId, userId)
+        .compose(
+            userShared -> {
+              if (userShared || orgId == null || orgId.isBlank()) {
+                return Future.succeededFuture(userShared);
+              }
+              try {
+                return visibilityDao.hasActiveOrganizationShare(itemId, UUID.fromString(orgId));
+              } catch (IllegalArgumentException e) {
+                return Future.succeededFuture(false);
+              }
+            });
+  }
+
+  /**
+   * Grants access to the item owner, a platform admin ({@code asset-management} scope) or an org
+   * admin of the item's organisation ({@code org-asset-management} scope).
+   */
   private boolean ownershipCheck(
       String ownerUserId,
       String subId,
-      List<String> roles,
+      List<String> scopes,
       String ownerOrganizationId,
       String userOrganizationId) {
-    // Allow admin roles to bypass ownership restrictions
-    boolean isCosAdmin =
-        roles != null && roles.stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
-
-    if (isCosAdmin) {
-      LOGGER.info("Ownership check bypassed for COS_ADMIN");
+    if (AssetAccessScopes.isAssetAdminFor(scopes, ownerOrganizationId, userOrganizationId)) {
+      LOGGER.info("Ownership check bypassed for asset admin scope");
       return true;
-    }
-
-    boolean isOrgAdmin =
-        roles != null && roles.stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN));
-
-    if (isOrgAdmin) {
-      return Objects.equals(ownerOrganizationId, userOrganizationId);
     }
 
     if (subId == null || subId.isEmpty()) {
@@ -299,24 +360,17 @@ public class ItemServiceImpl implements ItemService {
     }
 
     boolean isOwner = ownerUserId.equalsIgnoreCase(request.getSubId());
-    boolean isCosAdmin =
-        request.getRoles() != null
-            && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(COS_ADMIN));
-
-    boolean isOrgAdmin =
-        request.getRoles() != null
-            && request.getRoles().stream().anyMatch(role -> role.equalsIgnoreCase(ORG_ADMIN))
-            && Objects.equals(itemOrganizationId, request.getOrganizationId());
-
-    boolean isAdmin = isCosAdmin || isOrgAdmin;
+    boolean isAdmin =
+        AssetAccessScopes.isAssetAdminFor(
+            request.getScopes(), itemOrganizationId, request.getOrganizationId());
 
     setAccessFlags(response, isOwner, isAdmin);
 
-    // Allow the owner direct access
+    // Allow the owner / asset admins direct access
     if (ownershipCheck(
         ownerUserId,
         request.getSubId(),
-        request.getRoles(),
+        request.getScopes(),
         itemOrganizationId,
         request.getOrganizationId())) {
       LOGGER.debug(

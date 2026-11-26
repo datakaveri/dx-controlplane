@@ -83,6 +83,7 @@ import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
 import org.cdpg.dx.common.response.ResponseBuilder;
+import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.common.util.CpRoutingContextHelper;
 import org.cdpg.dx.common.util.RoutingContextHelper;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
@@ -865,6 +866,8 @@ public class ItemController implements ApiController {
 
         GetItemRequest request = new GetItemRequest(item.getId(), subId);
         request.setRoles(roles);
+        request.setScopes(
+            AssetAccessScopes.fromPrincipal(ctx.user() != null ? ctx.user().principal() : null));
 
         itemFetchService
             .fetchForWrite(request)
@@ -1033,6 +1036,8 @@ public class ItemController implements ApiController {
 
     GetItemRequest request = new GetItemRequest(id, subId);
     request.setRoles(roles);
+    request.setScopes(
+        AssetAccessScopes.fromPrincipal(ctx.user() != null ? ctx.user().principal() : null));
     // Fetch item once(for audit and rollback)
     itemService
         .getItem(request)
@@ -1120,6 +1125,8 @@ public class ItemController implements ApiController {
 
     String finalSubId = subId;
     List<String> finalRoles = roles;
+    List<String> finalScopes =
+        AssetAccessScopes.fromPrincipal(ctx.user() != null ? ctx.user().principal() : null);
 
     Future<String> orgIdFuture =
         finalSubId == null || finalSubId.isBlank()
@@ -1133,7 +1140,9 @@ public class ItemController implements ApiController {
             organisationId -> {
               GetItemRequest request = new GetItemRequest(itemId, finalSubId);
               request.setRoles(finalRoles);
+              request.setScopes(finalScopes);
               request.setOrganizationId(organisationId);
+              request.setIncludeSharedAccess(true);
 
               return itemService.getItem(request);
             })
@@ -1192,18 +1201,21 @@ public class ItemController implements ApiController {
     DxUser dxUser = null;
     String subId = null;
     List<String> roles = Collections.emptyList();
+    List<String> scopes = Collections.emptyList();
     String did = null;
 
     if (token != null) {
       dxUser = RoutingContextHelper.fromPrincipal(routingContext);
       subId = dxUser.sub().toString();
       roles = dxUser.roles();
+      scopes = AssetAccessScopes.fromJsonArray(dxUser.scopes());
       did = dxUser.did(); // default: from token (access-token case)
     }
 
     final DxUser finalDxUser = dxUser;
     final String finalSubId = subId;
     final List<String> finalRoles = roles;
+    final List<String> finalScopes = scopes;
     final String finalToken = token;
     final String finalDid = did;
 
@@ -1219,6 +1231,7 @@ public class ItemController implements ApiController {
             organisationId -> {
               GetItemRequest request = new GetItemRequest(itemId, finalSubId);
               request.setRoles(finalRoles);
+              request.setScopes(finalScopes);
               request.setToken(finalToken);
               request.setDid(finalDid);
               request.setOrganizationId(organisationId);

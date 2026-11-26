@@ -1,24 +1,21 @@
 package org.cdpg.dx.aaa.token.service.impl;
 
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.JWTOptions;
 import io.vertx.ext.auth.jwt.JWTAuth;
+import java.util.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.clientSecret.service.ClientcredetialService;
 import org.cdpg.dx.aaa.delegation.DelegationAccessEvaluator;
-import org.cdpg.dx.aaa.delegation.models.DelegationGrant;
-import org.cdpg.dx.aaa.delegation.models.DelegationScopeConstraint;
 import org.cdpg.dx.aaa.delegation.service.DelegationService;
 import org.cdpg.dx.aaa.item.service.ItemService;
 import org.cdpg.dx.aaa.item.util.GetItemRequest;
 import org.cdpg.dx.aaa.token.model.AccessTokenRequest;
-import org.cdpg.dx.aaa.token.model.DelegationValidationResult;
 import org.cdpg.dx.aaa.token.model.ItemInfo;
 import org.cdpg.dx.aaa.token.service.TokenService;
 import org.cdpg.dx.aaa.token.util.TokenClaimsBuilder;
@@ -26,10 +23,8 @@ import org.cdpg.dx.common.exception.DxBadRequestException;
 import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
-
-import java.time.LocalDateTime;
-import java.util.*;
 
 public class TokenServiceImpl implements TokenService {
 
@@ -266,6 +261,7 @@ public class TokenServiceImpl implements TokenService {
     GetItemRequest itemRequest = new GetItemRequest(itemId, user.sub().toString());
     itemRequest.setToken(token);
     itemRequest.setRoles(user.roles());
+    itemRequest.setScopes(AssetAccessScopes.fromRoles(user.roles()));
 
     return itemService
       .getItemWithAccessChecks(itemRequest)
