@@ -26,6 +26,7 @@ import org.cdpg.dx.common.exception.DxForbiddenException;
 import org.cdpg.dx.common.exception.DxNotFoundException;
 import org.cdpg.dx.common.exception.DxUnauthorizedException;
 import org.cdpg.dx.common.model.DxUser;
+import org.cdpg.dx.common.util.AssetAccessScopes;
 import org.cdpg.dx.database.elastic.model.ElasticsearchResponse;
 import org.cdpg.dx.keycloak.service.KeycloakUserService;
 
@@ -96,6 +97,7 @@ public class CatItemGrpcService extends CatItemServiceGrpc.CatItemServiceImplBas
                     orgId -> {
                       GetItemRequest itemReq = new GetItemRequest(itemId, userId);
                       itemReq.setRoles(roles);
+                      itemReq.setScopes(AssetAccessScopes.fromRoles(roles));
                       itemReq.setOrganizationId(orgId);
                       return itemService.getItem(itemReq);
                     })
