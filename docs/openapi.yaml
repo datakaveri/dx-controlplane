@@ -13988,17 +13988,55 @@ paths:
                         visibilityType:
                           type: string
                           example: USER
-                        userId:
-                          type: string
-                          format: uuid
+                        user:
+                          type: object
                           nullable: true
-                        orgId:
-                          type: string
-                          format: uuid
+                          description: Present when visibilityType is USER. Name/email fields are null if the user lookup fails.
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            firstName:
+                              type: string
+                              nullable: true
+                            lastName:
+                              type: string
+                              nullable: true
+                            email:
+                              type: string
+                              nullable: true
+                            organization:
+                              type: string
+                              nullable: true
+                        organization:
+                          type: object
                           nullable: true
+                          description: Present when visibilityType is ORGANIZATION.
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                              nullable: true
                         sharedBy:
-                          type: string
-                          format: uuid
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            firstName:
+                              type: string
+                              nullable: true
+                            lastName:
+                              type: string
+                              nullable: true
+                            email:
+                              type: string
+                              nullable: true
+                            organization:
+                              type: string
+                              nullable: true
                         status:
                           type: string
                           example: ACTIVE
@@ -14015,8 +14053,18 @@ paths:
                   - id: 14447a8f-f43e-4145-820a-81c13e978fdb
                     itemId: 96c1c3d4-3856-491a-9340-405e35db80c1
                     visibilityType: USER
-                    userId: c43dfe14-5f4f-4b77-90e1-f9945574d226
-                    sharedBy: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                    user:
+                      id: c43dfe14-5f4f-4b77-90e1-f9945574d226
+                      firstName: Ravi
+                      lastName: Kumar
+                      email: ravi.kumar@example.com
+                      organization: Example Org
+                    sharedBy:
+                      id: 2f945b8d-0cc8-4c5d-9a3e-53fa88e6e9b2
+                      firstName: Asha
+                      lastName: Rao
+                      email: asha.rao@example.com
+                      organization: Provider Org
                     status: ACTIVE
                     createdAt: '2026-05-25T10:13:44.345666Z'
                     updatedAt: '2026-05-25T10:13:44.345666Z'
@@ -14100,17 +14148,55 @@ paths:
                           enum:
                             - USER
                             - ORGANIZATION
-                        userId:
-                          type: string
-                          format: uuid
+                        user:
+                          type: object
                           nullable: true
-                        orgId:
-                          type: string
-                          format: uuid
+                          description: Present when visibilityType is USER. Name/email fields are null if the user lookup fails.
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            firstName:
+                              type: string
+                              nullable: true
+                            lastName:
+                              type: string
+                              nullable: true
+                            email:
+                              type: string
+                              nullable: true
+                            organization:
+                              type: string
+                              nullable: true
+                        organization:
+                          type: object
                           nullable: true
+                          description: Present when visibilityType is ORGANIZATION.
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            name:
+                              type: string
+                              nullable: true
                         sharedBy:
-                          type: string
-                          format: uuid
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuid
+                            firstName:
+                              type: string
+                              nullable: true
+                            lastName:
+                              type: string
+                              nullable: true
+                            email:
+                              type: string
+                              nullable: true
+                            organization:
+                              type: string
+                              nullable: true
                         status:
                           type: string
                           example: ACTIVE
@@ -14127,9 +14213,19 @@ paths:
                   - id: 9d4f2e6a-7b63-4f7b-8d4a-f36e9b21aa11
                     itemId: 7ab91e8f-89d2-4db7-a7fd-9912cb6fa123
                     visibilityType: USER
-                    userId: 1bc52d8e-25a2-4cb6-bb45-fec93ea7c100
-                    orgId: null
-                    sharedBy: 8ef12a90-3b0d-46f2-9c2d-6f88dd11b200
+                    user:
+                      id: 1bc52d8e-25a2-4cb6-bb45-fec93ea7c100
+                      firstName: Ravi
+                      lastName: Kumar
+                      email: ravi.kumar@example.com
+                      organization: Example Org
+                    sharedBy:
+                      id: 8ef12a90-3b0d-46f2-9c2d-6f88dd11b200
+                      firstName: Asha
+                      lastName: Rao
+                      email: asha.rao@example.com
+                      organization: Provider Org
+                    organization: null
                     status: ACTIVE
                     createdAt: '2026-05-22T10:00:00Z'
                     updatedAt: '2026-05-22T10:00:00Z'
