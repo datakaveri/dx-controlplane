@@ -12,7 +12,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cdpg.dx.aaa.shareAssets.dao.model.VisibilityEntity;
-import org.cdpg.dx.aaa.shareAssets.handler.ItemExistenceCheck;
+import org.cdpg.dx.aaa.shareAssets.handler.ItemOwnershipCheck;
 import org.cdpg.dx.aaa.shareAssets.service.VisibilityService;
 import org.cdpg.dx.aaa.shareAssets.service.model.ShareRequest;
 import org.cdpg.dx.apiserver.ApiController;
@@ -31,7 +31,7 @@ public class VisibilityController implements ApiController {
 
   private final VisibilityService visibilityService;
   private final URNGenerator urnGenerator;
-  private final ItemExistenceCheck itemExistenceCheck;
+  private final ItemOwnershipCheck itemOwnershipCheck;
   private final KeycloakUserService keycloakUserService;
 
   public VisibilityController(
@@ -43,7 +43,7 @@ public class VisibilityController implements ApiController {
 
     this.visibilityService = visibilityService;
     this.urnGenerator = urnGenerator;
-    itemExistenceCheck = new ItemExistenceCheck(elasticsearchService, docIndex);
+    itemOwnershipCheck = new ItemOwnershipCheck(elasticsearchService, docIndex);
     this.keycloakUserService = keycloakUserService;
   }
 
@@ -56,17 +56,19 @@ public class VisibilityController implements ApiController {
     builder
         .operation(SHARE_ASSETS_API)
         .handler(providerAccess)
-        .handler(itemExistenceCheck)
+        .handler(itemOwnershipCheck)
         .handler(this::shareAssetsHandler);
 
     builder
         .operation(REVOKE_SHARED_ASSETS_API)
         .handler(providerAccess)
+        .handler(itemOwnershipCheck)
         .handler(this::revokeAssetsHandler);
 
     builder
         .operation(GET_SHARED_ASSETS_API)
         .handler(providerAccess)
+        .handler(itemOwnershipCheck)
         .handler(this::getSharedAssetsHandler);
 
     builder.operation(GET_SHARED_ASSETS_WITH_ME_API)
