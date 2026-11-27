@@ -21,6 +21,11 @@ public class VisibilityEntity implements BaseEntity<VisibilityEntity> {
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;
 
+  // Response-only enrichment (not persisted): resolved from Keycloak / organization service.
+  private JsonObject userDetails;
+  private JsonObject organizationDetails;
+  private JsonObject sharedByDetails;
+
   public VisibilityEntity() {}
 
   public VisibilityEntity(JsonObject json) {
@@ -102,12 +107,17 @@ public class VisibilityEntity implements BaseEntity<VisibilityEntity> {
         .put("id", id)
         .put("itemId", itemId)
         .put("visibilityType", visibilityType)
-        .put("userId", userId)
-        .put("orgId", orgId)
-        .put("sharedBy", sharedBy)
+        .put("user", userId != null ? detailsOrId(userDetails, userId) : null)
+        .put("organization", orgId != null ? detailsOrId(organizationDetails, orgId) : null)
+        .put("sharedBy", sharedBy != null ? detailsOrId(sharedByDetails, sharedBy) : null)
         .put("status", status)
         .put("createdAt", createdAt)
         .put("updatedAt", updatedAt);
+  }
+
+  private static JsonObject detailsOrId(JsonObject details, UUID id) {
+    JsonObject out = details != null ? details.copy() : new JsonObject();
+    return out.put("id", id.toString());
   }
 
   @Override
@@ -193,6 +203,21 @@ public class VisibilityEntity implements BaseEntity<VisibilityEntity> {
 
   public VisibilityEntity setUpdatedAt(LocalDateTime updatedAt) {
     this.updatedAt = updatedAt;
+    return this;
+  }
+
+  public VisibilityEntity setUserDetails(JsonObject userDetails) {
+    this.userDetails = userDetails;
+    return this;
+  }
+
+  public VisibilityEntity setOrganizationDetails(JsonObject organizationDetails) {
+    this.organizationDetails = organizationDetails;
+    return this;
+  }
+
+  public VisibilityEntity setSharedByDetails(JsonObject sharedByDetails) {
+    this.sharedByDetails = sharedByDetails;
     return this;
   }
 }
